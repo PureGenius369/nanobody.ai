@@ -1,31 +1,44 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NanobodyAI Predictor PRO</title>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>NanobodyAI Predictor – PRO Model</title>
 
 <style>
-body{font-family:Segoe UI;background:#eef3fb;margin:0}
-.container{max-width:1100px;margin:30px auto;padding:20px}
-.card{background:white;border-radius:14px;padding:20px;margin-bottom:20px;box-shadow:0 2px 12px rgba(0,0,0,.08)}
-button{background:#ff6b35;color:white;padding:15px;border:none;border-radius:10px;font-weight:700;width:100%;cursor:pointer}
-.metric{display:inline-block;width:30%;text-align:center;padding:12px;background:#f8faff;border-radius:10px;margin:6px}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+--navy:#003d82;--blue:#0057b8;--sky:#4a90e2;
+--orange:#ff6b35;--red:#e63946;--green:#059669;
+--gold:#d97706;--bg:#eef3fb;--card:#fff;
+--text:#1e293b;--muted:#64748b;--border:#e2e8f0
+}
+body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);min-height:100vh;color:var(--text)}
+
+.card{background:var(--card);border-radius:14px;padding:22px;box-shadow:0 2px 12px rgba(0,0,0,.07)}
+.sec-head{font-size:12px;font-weight:700;color:var(--navy);text-transform:uppercase;border-bottom:2px solid var(--orange);padding-bottom:8px;margin-bottom:16px}
+.btn{width:100%;padding:16px;border:none;border-radius:12px;font-size:15px;font-weight:800;color:#fff;cursor:pointer;background:linear-gradient(135deg,var(--orange),var(--red))}
+.metric-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}
+.metric-box{background:#f8faff;border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.gauge-track{height:9px;background:var(--border);border-radius:5px;overflow:hidden;margin-top:4px}
+.gauge-fill{height:100%;border-radius:5px;transition:width 1s ease}
 </style>
 </head>
 
 <body>
 
-<div style="background:#003d82;color:white;padding:20px">
-<h2>🧬 NanobodyAI Predictor — PRO Scientific Model</h2>
+<div style="background:linear-gradient(135deg,#003d82,#0057b8);color:#fff;padding:24px">
+<h1>🧬 NanobodyAI Predictor — PRO Scientific Engine</h1>
 <p>Receptor Physics • BBB Transport • PK/PD Simulation</p>
 </div>
 
-<div class="container">
+<div style="max-width:1100px;margin:30px auto;padding:20px">
 
 <div class="card">
 
-<h3>Target Receptor</h3>
+<div class="sec-head">Target Configuration</div>
+
+<label>Brain Receptor</label>
 <select id="receptor">
 <option>mGluR5</option>
 <option>mGlu2</option>
@@ -36,7 +49,9 @@ button{background:#ff6b35;color:white;padding:15px;border:none;border-radius:10p
 <option>TrkB</option>
 </select>
 
-<h3>Engineering</h3>
+<br><br>
+
+<label>Engineering Modification</label>
 <select id="mod">
 <option>None</option>
 <option>PEGylation</option>
@@ -46,20 +61,23 @@ button{background:#ff6b35;color:white;padding:15px;border:none;border-radius:10p
 <option>Albumin Binding</option>
 </select>
 
-<h3>Biophysical Parameters</h3>
-<div id="sliders"></div>
-
-<button onclick="runPrediction()">Run PRO Simulation</button>
-
 </div>
 
-<div class="card" id="output"></div>
+<div class="card">
+<div class="sec-head">Biophysical Parameters</div>
+<div id="sliders"></div>
+<button class="btn" onclick="runPrediction()">🚀 Run PRO Simulation</button>
+</div>
+
+<div class="card">
+<div id="output"></div>
+</div>
 
 </div>
 
 <script>
 
-// -----------------------------
+// ---------- SLIDERS ----------
 const FEATURES=[
 {id:"mw",label:"Molecular Weight (kDa)",min:10,max:30,step:.5,def:15},
 {id:"cdr3",label:"CDR3 Length",min:5,max:25,step:1,def:14},
@@ -74,15 +92,14 @@ const sliderVals={};
 FEATURES.forEach(f=>{
 sliderVals[f.id]=f.def;
 document.getElementById("sliders").innerHTML+=`
+<div style="margin-bottom:12px">
 <label>${f.label}: <span id="v-${f.id}">${f.def}</span></label>
 <input type="range" min="${f.min}" max="${f.max}" step="${f.step}" value="${f.def}"
 oninput="sliderVals['${f.id}']=parseFloat(this.value);document.getElementById('v-${f.id}').innerText=this.value">
-<br><br>`;
+</div>`;
 });
 
-// -----------------------------
-// RECEPTOR PHYSICS DATABASE
-// -----------------------------
+// ---------- RECEPTOR PHYSICS ----------
 const receptorPhysics={
 "mGluR5":{difficulty:0.7,bbbNeed:0.6},
 "mGlu2":{difficulty:0.5,bbbNeed:0.5},
@@ -93,14 +110,9 @@ const receptorPhysics={
 "TrkB":{difficulty:0.95,bbbNeed:0.85}
 };
 
-// -----------------------------
-// UTIL
-// -----------------------------
 function clamp(v,min,max){return Math.max(min,Math.min(max,v));}
 
-// -----------------------------
-// CORE PRO MODEL
-// -----------------------------
+// ---------- PRO MODEL ----------
 function runPrediction(){
 
 const v=sliderVals;
@@ -108,81 +120,71 @@ const receptor=document.getElementById("receptor").value;
 const mod=document.getElementById("mod").value;
 const phys=receptorPhysics[receptor];
 
-// ---- STRUCTURAL STABILITY ----
-let foldingEnergy=(v.tm-60)*1.5-Math.abs(v.hydro)*6;
-let stability=clamp(60+foldingEnergy,5,98);
+// stability
+let stability=clamp(60+(v.tm-60)*1.5-Math.abs(v.hydro)*6,5,98);
 
-// ---- BINDING ENTROPY MODEL ----
-let bindingEntropy=v.cdr3*1.4-Math.abs(v.hydro)*2;
-let receptorPenalty=phys.difficulty*25;
-let kd=clamp(45-bindingEntropy+receptorPenalty,0.3,95);
+// binding affinity
+let kd=clamp(45-(v.cdr3*1.4)+phys.difficulty*25,0.3,95);
 
-// ---- BBB ACTIVE TRANSPORT ----
+// BBB transport
 let bbb=3+v.charge*0.7-(v.mw-15)*0.2;
 if(mod==="TfR Bispecific")bbb+=3;
 if(mod==="CPP Conjugation")bbb+=2;
 bbb-=phys.bbbNeed*2;
 bbb=clamp(bbb,0.1,9.5);
 
-// ---- PHARMACOKINETICS ----
+// half-life
 let halfLife=6+stability*0.5;
 if(mod==="Fc Fusion")halfLife*=3;
 if(mod==="PEGylation")halfLife*=2;
 if(mod==="Albumin Binding")halfLife*=1.8;
 halfLife=clamp(halfLife,1,120);
 
-// ---- CNS DRUG-LIKENESS ----
-let cnsScore=50;
-if(v.pi>=6.5&&v.pi<=8.5)cnsScore+=15;
-if(v.mw<18)cnsScore+=10;
-if(Math.abs(v.hydro)<1.2)cnsScore+=10;
-cnsScore=clamp(cnsScore,5,98);
+// CNS drug likeness
+let cns=50;
+if(v.pi>=6.5&&v.pi<=8.5)cns+=15;
+if(v.mw<18)cns+=10;
+if(Math.abs(v.hydro)<1.2)cns+=10;
+cns=clamp(cns,5,98);
 
-// ---- TRANSLATIONAL INDEX ----
-let translational=
+// translational index
+let overall=clamp(
 0.3*stability+
 0.3*(100-kd)+
 0.2*(bbb*10)+
-0.2*cnsScore;
+0.2*cns
+,5,99);
 
-translational=clamp(translational,5,99);
-
-// ---- GRADE ----
+// grade
 let grade="D";
-if(translational>85)grade="A+";
-else if(translational>75)grade="A";
-else if(translational>65)grade="B+";
-else if(translational>55)grade="B";
-else if(translational>40)grade="C";
+if(overall>85)grade="A+";
+else if(overall>75)grade="A";
+else if(overall>65)grade="B+";
+else if(overall>55)grade="B";
+else if(overall>40)grade="C";
 
-// ---- OUTPUT ----
+// ---------- OUTPUT ----------
 document.getElementById("output").innerHTML=`
 
-<h2>PRO Simulation Result</h2>
+<h2>Prediction Result</h2>
 
-<div class="metric"><b>KD</b><br>${kd.toFixed(2)} nM</div>
-<div class="metric"><b>BBB</b><br>${(bbb*10).toFixed(1)}%</div>
-<div class="metric"><b>Half-life</b><br>${Math.round(halfLife)} h</div>
-
-<hr>
+<div class="metric-grid">
+<div class="metric-box"><b>KD</b><br>${kd.toFixed(2)} nM</div>
+<div class="metric-box"><b>BBB</b><br>${(bbb*10).toFixed(1)}%</div>
+<div class="metric-box"><b>Half-life</b><br>${Math.round(halfLife)} h</div>
+</div>
 
 <p><b>Structural Stability:</b> ${Math.round(stability)}</p>
-<p><b>CNS Drug-Likeness:</b> ${Math.round(cnsScore)}</p>
-<p><b>Translational Score:</b> ${Math.round(translational)}</p>
+<div class="gauge-track"><div class="gauge-fill" style="width:${stability}%;background:#059669"></div></div>
+
+<p><b>CNS Drug-Likeness:</b> ${Math.round(cns)}</p>
+<div class="gauge-track"><div class="gauge-fill" style="width:${cns}%;background:#0057b8"></div></div>
 
 <h2>Clinical Grade: ${grade}</h2>
-
-<p>
-${translational>80?
-"Excellent clinical translation potential with strong receptor engagement and CNS delivery.":
-translational>60?
-"Promising candidate requiring optimisation for clinical advancement.":
-"Significant engineering refinement required before translational consideration."}
-</p>
-
+<p>Translational Score: ${Math.round(overall)}</p>
 `;
 }
-
 </script>
+
 </body>
 </html>

@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NanobodyAI Predictor – Mann Sutariya, PDEU</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:   #003d82;
+      --blue:   #0057b8;
+      --sky:    #4a90e2;
+      --orange: #ff6b35;
+      --red:    #e63946;
+      --green:  #059669;
+      --purple: #6b46c1;
+      --gold:   #d97706;
+      --bg:     #eef3fb;
+      --card:   #ffffff;
+      --text:   #1e293b;
+      --muted:  #64748b;
+      --border: #e2e8f0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      min-height: 100vh;
+      color: var(--text);
+    }
+
+    /* scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--sky); border-radius: 3px; }
+
+    /* utility */
+    .card {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 22px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    }
+
+    .section-head {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--navy);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      border-bottom: 2px solid var(--orange);
+      padding-bottom: 8px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    /* range slider */
+    input[type=range] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: var(--border);
+      outline: none;
+      cursor: pointer;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: var(--navy);
+      box-shadow: 0 2px 6px rgba(0,61,130,.35);
+      transition: transform .15s;
+    }
+    input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+    select {
+      width: 100%;
+      padding: 10px 14px;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      font-size: 13px;
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
+      color: var(--navy);
+      background: #f8faff;
+      cursor: pointer;
+      outline: none;
+      transition: border-color .2s;
+    }
+    select:focus { border-color: var(--sky); }
+
+    /* animations */
+    @keyframes fadeUp {
+      from { opacity:0; transform:translateY(18px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    @keyframes spin   { to { transform: rotate(360deg); } }
+    @keyframes pulse  { 0%,100%{opacity:.3} 50%{opacity:1} }
+    @keyframes gradX  {
+      0%   { background-position: 0% 50%; }
+      50%  { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .fade-up { animation: fadeUp .45s ease both; }
+
+    .predict-btn {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 800;
+      font-family: 'Inter', sans-serif;
+      letter-spacing: .03em;
+      color: white;
+      cursor: pointer;
+      background: linear-gradient(135deg, var(--orange), var(--red), var(--orange));
+      background-size: 200% 200%;
+      animation: gradX 3s ease infinite;
+      box-shadow: 0 4px 18px rgba(255,107,53,.45);
+      transition: opacity .2s, transform .15s;
+    }
+    .predict-btn:hover   { transform: translateY(-2px); }
+    .predict-btn:active  { transform: translateY(0); }
+    .predict-btn:disabled {
+      background: #94a3b8;
+      animation: none;
+      box-shadow: none;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 3px 11px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      color: white;
+    }
+
+    .gauge-track {
+      height: 9px;
+      background: var(--border);
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    .gauge-fill {
+      height: 100%;
+      border-radius: 5px;
+      transition: width 1s cubic-bezier(.4,0,.2,1);
+    }
+
+    /* metric cards */
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(3,1fr);
+      gap: 10px;
+      margin: 14px 0;
+    }
+    .metric-box {
+      background: #f8faff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 10px;
+      text-align: center;
+    }
+    .metric-icon { font-size: 22px; margin-bottom: 4px; }
+    .metric-val  { font-size: 17px; font-weight: 800; color: var(--navy); }
+    .metric-lbl  { font-size: 10px; color: var(--muted); margin-top: 3px; }
+
+    /* ring SVG */
+    .ring-wrap { text-align: center; }
+
+    /* tips */
+    .tip-num {
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      background: var(--gold);
+      color: white;
+      font-size: 10px;
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* grade banner */
+    .grade-banner {
+      border-radius: 14px;
+      padding: 20px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: white;
+    }
+
+    /* strength / weakness rows */
+    .sw-row {
+      font-size: 11.5px;
+      line-height: 1.5;
+      display: flex;
+      gap: 7px;
+      margin-bottom: 6px;
+    }
+    .sw-arrow { flex-shrink: 0; font-weight: 700; }
+
+    @media (max-width: 820px) {
+      .two-col { grid-template-columns: 1fr !important; }
+      .metric-grid { grid-template-columns: repeat(2,1fr); }
+    }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState } = React;
+
+/* ── constants ─────────────────────────────────────────────── */
+const FEATURES = [
+  { id:"mw",           label:"Molecular Weight",     unit:"kDa", min:10,  max:30,  step:.5,  def:15,   hint:"Typical nanobody: 12–18 kDa" },
+  { id:"cdr3_length",  label:"CDR3 Loop Length",     unit:"aa",  min:5,   max:25,  step:1,   def:14,   hint:"Longer CDR3 → higher specificity" },
+  { id:"hydrophobicity",label:"Hydrophobicity Index",unit:"",    min:-3,  max:3,   step:.1,  def:.5,   hint:"Lower = better aqueous solubility" },
+  { id:"isoelectric",  label:"Isoelectric Point pI", unit:"",    min:4,   max:10,  step:.1,  def:7.0,  hint:"Optimal 6.5–8.5 for CNS targeting" },
+  { id:"net_charge",   label:"Net Charge at pH 7.4", unit:"",    min:-5,  max:5,   step:1,   def:1,    hint:"Slight + charge aids BBB crossing" },
+  { id:"stability",    label:"Thermostability Tm",   unit:"°C",  min:40,  max:90,  step:1,   def:68,   hint:"Higher Tm → more stable nanobody" },
+];
+
+const RECEPTORS    = ["mGluR5","mGlu2","D2 Dopamine","5-HT2A Serotonin","NMDA","GABA-A","TrkB","mGluR3"];
+const MODIFICATIONS= ["None","PEGylation (20 kDa)","Fc Fusion","TfR Bispecific","CPP Conjugation","Albumin Binding"];
+
+const gradeColor = g => ({
+  "A+":"#059669","A":"#059669","B+":"#0057b8","B":"#0057b8","C":"#d97706","D":"#e63946"
+}[g] ?? "#1e293b");
+
+/* ── sub-components ─────────────────────────────────────────── */
+function Slider({ feat, value, onChange }) {
+  const pct = ((value - feat.min) / (feat.max - feat.min)) * 100;
+  return (
+    <div style={{marginBottom:18}}>
+      <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+        <span style={{fontSize:12,fontWeight:600,color:"#1e293b"}}>{feat.label}</span>
+        <span style={{fontSize:12,fontWeight:700,background:"#e8f0fe",color:"#003d82",
+          padding:"2px 9px",borderRadius:10}}>{value}{feat.unit}</span>
+      </div>
+      <div style={{position:"relative",height:6,background:"#e2e8f0",borderRadius:3}}>
+        <div style={{position:"absolute",height:"100%",borderRadius:3,width:`${pct}%`,
+          background:"linear-gradient(90deg,#4a90e2,#003d82)"}} />
+        <input type="range" min={feat.min} max={feat.max} step={feat.step} value={value}
+          onChange={e=>onChange(feat.id,parseFloat(e.target.value))}
+          style={{position:"absolute",width:"100%",height:"100%",opacity:0,margin:0,padding:0}} />
+      </div>
+      <div style={{fontSize:10,color:"#94a3b8",marginTop:3}}>💡 {feat.hint}</div>
+    </div>
+  );
+}
+
+function Ring({ score }) {
+  const r=38, circ=2*Math.PI*r, dash=(score/100)*circ;
+  const col = score>70?"#059669":score>40?"#d97706":"#e63946";
+  return (
+    <div style={{textAlign:"center"}}>
+      <svg width={90} height={90} viewBox="0 0 90 90">
+        <circle cx={45} cy={45} r={r} fill="none" stroke="#e2e8f0" strokeWidth={8}/>
+        <circle cx={45} cy={45} r={r} fill="none" stroke={col} strokeWidth={8}
+          strokeDasharray={`${dash} ${circ-dash}`} strokeDashoffset={circ/4}
+          strokeLinecap="round" style={{transition:"stroke-dasharray 1s ease"}}/>
+        <text x={45} y={50} textAnchor="middle" fill={col} fontWeight={700} fontSize={20}>{score}</text>
+      </svg>
+      <div style={{fontSize:11,fontWeight:600,color:"#003d82",marginTop:-4}}>Overall</div>
+    </div>
+  );
+}
+
+function Gauge({ label, value }) {
+  const col = value>70?"#059669":value>40?"#d97706":"#e63946";
+  return (
+    <div style={{marginBottom:11}}>
+      <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+        <span style={{fontSize:12,fontWeight:600,color:"#1e293b"}}>{label}</span>
+        <span style={{fontSize:12,fontWeight:700,color:col}}>{value}/100</span>
+      </div>
+      <div className="gauge-track">
+        <div className="gauge-fill" style={{width:`${value}%`,background:`linear-gradient(90deg,${col}88,${col})`}}/>
+      </div>
+    </div>
+  );
+}
+
+function Placeholder() {
+  return (
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",
+      justifyContent:"center",padding:"60px 30px",textAlign:"center"}}>
+      <div style={{fontSize:64,marginBottom:18}}>🧪</div>
+      <h3 style={{color:"#003d82",fontSize:20,marginBottom:10}}>Ready to Predict</h3>
+      <p style={{color:"#64748b",fontSize:13,lineHeight:1.7,maxWidth:300}}>
+        Configure nanobody parameters and click <strong>Run AI Prediction</strong> to receive
+        binding affinity, BBB penetration, clinical grade, and optimisation tips.
+      </p>
+      <div style={{marginTop:22,display:"flex",flexDirection:"column",gap:9,textAlign:"left"}}>
+        {["Predicted K_D (binding affinity)","BBB penetration estimate",
+          "Half-life prediction","Clinical grade & outlook","Optimisation suggestions"]
+          .map(t=>(
+          <div key={t} style={{display:"flex",alignItems:"center",gap:9,fontSize:12,color:"#475569"}}>
+            <span style={{color:"#4a90e2",fontWeight:700}}>→</span>{t}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Loading() {
+  const steps=["Computing binding thermodynamics","Modelling BBB transport",
+    "Evaluating pharmacokinetics","Generating clinical insights"];
+  return (
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",
+      justifyContent:"center",padding:"60px 30px",textAlign:"center"}}>
+      <div style={{fontSize:52,marginBottom:18,animation:"spin 1.8s linear infinite"}}>⚙️</div>
+      <h3 style={{color:"#003d82",fontSize:18,marginBottom:18}}>Analysing Properties…</h3>
+      {steps.map((s,i)=>(
+        <div key={i} style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
+          <div style={{width:9,height:9,borderRadius:"50%",background:"#4a90e2",
+            animation:`pulse 1s ${i*.25}s infinite`}}/>
+          <span style={{fontSize:12,color:"#64748b"}}>{s}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ── main app ───────────────────────────────────────────────── */
+export default function App() {
+  const defaults = Object.fromEntries(FEATURES.map(f=>[f.id,f.def]));
+  const [vals, setVals]   = useState(defaults);
+  const [receptor, setRec]= useState("mGluR5");
+  const [mod, setMod]     = useState("None");
+  const [result, setRes]  = useState(null);
+  const [loading, setLoading]= useState(false);
+
+  const change = (id,v)=> setVals(p=>({...p,[id]:v}));
+
+  const predict = async ()=>{
+    setLoading(true); setRes(null);
+    const prompt=`You are an expert biophysicist and AI model specialised in nanobody therapeutics for neuropsychiatric disorders.
+
+Analyse this nanobody candidate and provide a structured prediction.
+
+INPUT FEATURES:
+- Target Receptor: ${receptor}
+- Molecular Weight: ${vals.mw} kDa
+- CDR3 Loop Length: ${vals.cdr3_length} amino acids
+- Hydrophobicity Index: ${vals.hydrophobicity}
+- Isoelectric Point: ${vals.isoelectric}
+- Net Charge at pH 7.4: ${vals.net_charge}
+- Thermostability Tm: ${vals.stability}°C
+- Engineering Modification: ${mod}
+
+Respond ONLY with valid JSON, no markdown, no extra text:
+{
+  "kd_nm": <number 0.1-100>,
+  "bbb_penetration": <number 0.05-10>,
+  "half_life_h": <number 1-120>,
+  "selectivity_score": <integer 0-100>,
+  "stability_score": <integer 0-100>,
+  "overall_score": <integer 0-100>,
+  "grade": "<A+|A|B+|B|C|D>",
+  "verdict": "<Excellent|Good|Moderate|Poor> Candidate",
+  "key_strengths": ["<str1>","<str2>","<str3>"],
+  "key_weaknesses": ["<str1>","<str2>"],
+  "optimization_tips": ["<tip1>","<tip2>","<tip3>"],
+  "clinical_outlook": "<2-3 sentence prognosis>",
+  "similar_approved": "<closest real clinical nanobody or antibody>",
+  "confidence": <integer 60-99>
+}`;
+
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          model:"claude-sonnet-4-20250514",
+          max_tokens:1000,
+          messages:[{role:"user",content:prompt}]
+        })
+      });
+      const data = await res.json();
+      const text = data.content.map(b=>b.text||"").join("");
+      const clean = text.replace(/```json|```/g,"").trim();
+      setRes(JSON.parse(clean));
+    } catch(err){
+      setRes({error:"Prediction failed — please try again."});
+    }
+    setLoading(false);
+  };
+
+  const gc = gradeColor(result?.grade);
+
+  return (
+    <div style={{minHeight:"100vh",padding:"0 0 40px 0"}}>
+
+      {/* ── header ── */}
+      <div style={{background:"linear-gradient(135deg,#003d82,#0057b8)",
+        color:"white",padding:"28px 32px 22px",marginBottom:28,
+        boxShadow:"0 4px 20px rgba(0,61,130,.3)"}}>
+        <div style={{maxWidth:1100,margin:"0 auto",display:"flex",
+          alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:14}}>
+          <div>
+            <div style={{display:"flex",alignItems:"center",gap:12}}>
+              <div style={{fontSize:36}}>🧬</div>
+              <div>
+                <h1 style={{fontSize:24,fontWeight:900,margin:0}}>NanobodyAI Predictor</h1>
+                <p style={{fontSize:12.5,opacity:.85,margin:0}}>
+                  AI-Powered Nanobody Affinity & BBB Penetration Model for Neuropsychiatric Targets
+                </p>
+              </div>
+            </div>
+          </div>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+            {["Biophysical Features","Receptor Specificity","BBB Transport","Clinical Translation"]
+              .map(t=>(
+              <span key={t} className="tag"
+                style={{background:"rgba(255,255,255,.18)",fontSize:11}}>{t}</span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── body ── */}
+      <div style={{maxWidth:1100,margin:"0 auto",padding:"0 20px",
+        display:"grid",gridTemplateColumns:"1fr 1fr",gap:24}} className="two-col">
+
+        {/* LEFT – inputs */}
+        <div style={{display:"flex",flexDirection:"column",gap:20}}>
+
+          {/* target */}
+          <div className="card">
+            <div className="section-head">🎯 Target Configuration</div>
+            <label style={{fontSize:12,fontWeight:600,color:"#475569",display:"block",marginBottom:6}}>
+              Brain Receptor Target
+            </label>
+            <select value={receptor} onChange={e=>setRec(e.target.value)} style={{marginBottom:14}}>
+              {RECEPTORS.map(r=><option key={r}>{r}</option>)}
+            </select>
+            <label style={{fontSize:12,fontWeight:600,color:"#475569",display:"block",marginBottom:6}}>
+              Engineering Modification
+            </label>
+            <select value={mod} onChange={e=>setMod(e.target.value)}>
+              {MODIFICATIONS.map(m=><option key={m}>{m}</option>)}
+            </select>
+          </div>
+
+          {/* sliders */}
+          <div className="card">
+            <div className="section-head">⚗️ Biophysical Parameters</div>
+            {FEATURES.map(f=>(
+              <Slider key={f.id} feat={f} value={vals[f.id]} onChange={change}/>
+            ))}
+          </div>
+
+          <button className="predict-btn" onClick={predict} disabled={loading}>
+            {loading ? "🔬 Analysing Nanobody…" : "🚀 Run AI Prediction"}
+          </button>
+
+          {/* info strip */}
+          <div style={{fontSize:11,color:"#94a3b8",textAlign:"center",lineHeight:1.6}}>
+            Powered by Claude AI · For academic & research use only<br/>
+            <strong style={{color:"#003d82"}}>Mann Sutariya · PDEU, Gandhinagar</strong>
+          </div>
+        </div>
+
+        {/* RIGHT – results */}
+        <div>
+          <div className="card" style={{minHeight:480}}>
+            {!result && !loading && <Placeholder/>}
+            {loading && <Loading/>}
+
+            {result && result.error && (
+              <div style={{display:"flex",flexDirection:"column",alignItems:"center",
+                padding:40,textAlign:"center"}}>
+                <div style={{fontSize:36,marginBottom:12}}>❌</div>
+                <p style={{color:"#e63946",fontSize:14}}>{result.error}</p>
+              </div>
+            )}
+
+            {result && !result.error && (
+              <div className="fade-up" style={{display:"flex",flexDirection:"column",gap:16}}>
+
+                {/* grade banner */}
+                <div className="grade-banner"
+                  style={{background:`linear-gradient(135deg,${gc},${gc}bb)`,
+                    boxShadow:`0 4px 16px ${gc}44`}}>
+                  <div>
+                    <div style={{fontSize:30,fontWeight:900}}>Grade: {result.grade}</div>
+                    <div style={{fontSize:15,fontWeight:600,opacity:.9}}>{result.verdict}</div>
+                    <div style={{fontSize:11,opacity:.75,marginTop:4}}>
+                      Confidence: {result.confidence}% · Target: {receptor}
+                    </div>
+                  </div>
+                  <Ring score={result.overall_score}/>
+                </div>
+
+                {/* metrics */}
+                <div>
+                  <div style={{fontSize:13,fontWeight:700,color:"#003d82",marginBottom:10}}>
+                    📊 Predicted Metrics
+                  </div>
+                  <div className="metric-grid">
+                    {[
+                      {icon:"🔗",val:`${result.kd_nm} nM`,     lbl:"K_D Binding Affinity"},
+                      {icon:"🧠",val:`${result.bbb_penetration}%`, lbl:"BBB Penetration"},
+                      {icon:"⏱️",val:`${result.half_life_h}h`,  lbl:"Half-Life"},
+                    ].map(m=>(
+                      <div className="metric-box" key={m.lbl}>
+                        <div className="metric-icon">{m.icon}</div>
+                        <div className="metric-val">{m.val}</div>
+                        <div className="metric-lbl">{m.lbl}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <Gauge label="Selectivity Score" value={result.selectivity_score}/>
+                  <Gauge label="Stability Score"   value={result.stability_score}/>
+                </div>
+
+                {/* strengths / weaknesses */}
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+                  <div style={{background:"#f0fdf4",borderRadius:10,padding:14,
+                    border:"1px solid #bbf7d0"}}>
+                    <div style={{fontSize:12,fontWeight:700,color:"#059669",marginBottom:8}}>
+                      ✅ Strengths
+                    </div>
+                    {result.key_strengths.map((s,i)=>(
+                      <div className="sw-row" key={i}>
+                        <span className="sw-arrow" style={{color:"#059669"}}>▸</span>
+                        <span style={{color:"#166534"}}>{s}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{background:"#fff5f5",borderRadius:10,padding:14,
+                    border:"1px solid #fed7d7"}}>
+                    <div style={{fontSize:12,fontWeight:700,color:"#dc2626",marginBottom:8}}>
+                      ⚠️ Weaknesses
+                    </div>
+                    {result.key_weaknesses.map((w,i)=>(
+                      <div className="sw-row" key={i}>
+                        <span className="sw-arrow" style={{color:"#dc2626"}}>▸</span>
+                        <span style={{color:"#7f1d1d"}}>{w}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* tips */}
+                <div style={{background:"#fffbeb",borderRadius:10,padding:14,
+                  border:"1px solid #fde68a"}}>
+                  <div style={{fontSize:12,fontWeight:700,color:"#d97706",marginBottom:10}}>
+                    💡 Optimisation Recommendations
+                  </div>
+                  {result.optimization_tips.map((t,i)=>(
+                    <div key={i} style={{display:"flex",gap:10,alignItems:"flex-start",
+                      marginBottom:8}}>
+                      <div className="tip-num">{i+1}</div>
+                      <span style={{fontSize:12,color:"#78350f",lineHeight:1.55}}>{t}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* clinical */}
+                <div style={{background:"#eff6ff",borderRadius:10,padding:14,
+                  border:"1px solid #bfdbfe"}}>
+                  <div style={{fontSize:12,fontWeight:700,color:"#1d4ed8",marginBottom:8}}>
+                    🏥 Clinical Translation Outlook
+                  </div>
+                  <p style={{fontSize:12,color:"#1e3a5f",lineHeight:1.65,margin:0}}>
+                    {result.clinical_outlook}
+                  </p>
+                  <div style={{marginTop:10,fontSize:12,color:"#1d4ed8",fontWeight:600}}>
+                    Closest Analog: {result.similar_approved}
+                  </div>
+                </div>
+
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>

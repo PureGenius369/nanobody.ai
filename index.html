@@ -3,18 +3,15 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>NanobodyAI Predictor – PRO Model</title>
+<title>NanobodyAI Predictor – Mann Sutariya, PDEU</title>
 
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
---navy:#003d82;--blue:#0057b8;--sky:#4a90e2;
---orange:#ff6b35;--red:#e63946;--green:#059669;
---gold:#d97706;--bg:#eef3fb;--card:#fff;
---text:#1e293b;--muted:#64748b;--border:#e2e8f0
-}
+:root{--navy:#003d82;--blue:#0057b8;--sky:#4a90e2;--orange:#ff6b35;--red:#e63946;--green:#059669;--gold:#d97706;--bg:#eef3fb;--card:#fff;--text:#1e293b;--muted:#64748b;--border:#e2e8f0}
 body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);min-height:100vh;color:var(--text)}
-
+input[type=range]{-webkit-appearance:none;width:100%;height:6px;border-radius:3px;background:var(--border);outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--navy);cursor:pointer}
+select{width:100%;padding:10px 14px;border:2px solid var(--border);border-radius:10px;font-size:13px;font-weight:600;color:var(--navy);background:#f8faff}
 .card{background:var(--card);border-radius:14px;padding:22px;box-shadow:0 2px 12px rgba(0,0,0,.07)}
 .sec-head{font-size:12px;font-weight:700;color:var(--navy);text-transform:uppercase;border-bottom:2px solid var(--orange);padding-bottom:8px;margin-bottom:16px}
 .btn{width:100%;padding:16px;border:none;border-radius:12px;font-size:15px;font-weight:800;color:#fff;cursor:pointer;background:linear-gradient(135deg,var(--orange),var(--red))}
@@ -22,138 +19,145 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);min-height:100
 .metric-box{background:#f8faff;border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
 .gauge-track{height:9px;background:var(--border);border-radius:5px;overflow:hidden;margin-top:4px}
 .gauge-fill{height:100%;border-radius:5px;transition:width 1s ease}
+.fade-up{animation:fadeUp .4s ease both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 </style>
 </head>
 
 <body>
 
 <div style="background:linear-gradient(135deg,#003d82,#0057b8);color:#fff;padding:24px">
-<h1>🧬 NanobodyAI Predictor — PRO Scientific Engine</h1>
-<p>Receptor Physics • BBB Transport • PK/PD Simulation</p>
+<h1>🧬 NanobodyAI Predictor</h1>
+<p>AI-Inspired Nanobody Affinity & BBB Penetration Model</p>
 </div>
 
-<div style="max-width:1100px;margin:30px auto;padding:20px">
+<div id="main-grid" style="max-width:1100px;margin:28px auto;padding:0 20px;display:grid;grid-template-columns:1fr 1fr;gap:24px">
+
+<div style="display:flex;flex-direction:column;gap:18px">
 
 <div class="card">
-
 <div class="sec-head">Target Configuration</div>
 
 <label>Brain Receptor</label>
 <select id="receptor">
 <option>mGluR5</option>
 <option>mGlu2</option>
-<option>NMDA</option>
 <option>D2 Dopamine</option>
-<option>5-HT2A</option>
+<option>5-HT2A Serotonin</option>
+<option>NMDA</option>
 <option>GABA-A</option>
 <option>TrkB</option>
+<option>mGluR3</option>
 </select>
 
 <br><br>
 
 <label>Engineering Modification</label>
-<select id="mod">
+<select id="modification">
 <option>None</option>
-<option>PEGylation</option>
+<option>PEGylation (20 kDa)</option>
 <option>Fc Fusion</option>
 <option>TfR Bispecific</option>
 <option>CPP Conjugation</option>
 <option>Albumin Binding</option>
 </select>
-
 </div>
 
 <div class="card">
 <div class="sec-head">Biophysical Parameters</div>
 <div id="sliders"></div>
-<button class="btn" onclick="runPrediction()">🚀 Run PRO Simulation</button>
 </div>
 
-<div class="card">
-<div id="output"></div>
+<button class="btn" id="predictBtn" onclick="runPrediction()">🚀 Run AI Prediction</button>
+
+</div>
+
+<div>
+<div class="card" id="results-panel" style="min-height:460px">
+<div id="placeholder">Ready to predict…</div>
+<div id="output" style="display:none"></div>
+</div>
 </div>
 
 </div>
 
 <script>
 
-// ---------- SLIDERS ----------
+// ------------------ SLIDERS ------------------
 const FEATURES=[
-{id:"mw",label:"Molecular Weight (kDa)",min:10,max:30,step:.5,def:15},
-{id:"cdr3",label:"CDR3 Length",min:5,max:25,step:1,def:14},
-{id:"hydro",label:"Hydrophobicity",min:-3,max:3,step:.1,def:.5},
-{id:"pi",label:"Isoelectric Point",min:4,max:10,step:.1,def:7},
-{id:"charge",label:"Net Charge",min:-5,max:5,step:1,def:1},
-{id:"tm",label:"Thermostability °C",min:40,max:90,step:1,def:68}
+{id:"mw",label:"Molecular Weight",unit:"kDa",min:10,max:30,step:.5,def:15},
+{id:"cdr3",label:"CDR3 Loop Length",unit:"aa",min:5,max:25,step:1,def:14},
+{id:"hydro",label:"Hydrophobicity",unit:"",min:-3,max:3,step:.1,def:.5},
+{id:"pi",label:"Isoelectric Point",unit:"",min:4,max:10,step:.1,def:7},
+{id:"charge",label:"Net Charge",unit:"",min:-5,max:5,step:1,def:1},
+{id:"tm",label:"Thermostability",unit:"°C",min:40,max:90,step:1,def:68}
 ];
 
 const sliderVals={};
 
 FEATURES.forEach(f=>{
 sliderVals[f.id]=f.def;
-document.getElementById("sliders").innerHTML+=`
-<div style="margin-bottom:12px">
-<label>${f.label}: <span id="v-${f.id}">${f.def}</span></label>
+document.getElementById('sliders').innerHTML+=`
+<div style="margin-bottom:15px">
+<label>${f.label}: <span id="v-${f.id}">${f.def}${f.unit}</span></label>
 <input type="range" min="${f.min}" max="${f.max}" step="${f.step}" value="${f.def}"
-oninput="sliderVals['${f.id}']=parseFloat(this.value);document.getElementById('v-${f.id}').innerText=this.value">
+oninput="sliderVals['${f.id}']=parseFloat(this.value);document.getElementById('v-${f.id}').innerText=this.value+'${f.unit}'">
 </div>`;
 });
 
-// ---------- RECEPTOR PHYSICS ----------
-const receptorPhysics={
-"mGluR5":{difficulty:0.7,bbbNeed:0.6},
-"mGlu2":{difficulty:0.5,bbbNeed:0.5},
-"NMDA":{difficulty:0.9,bbbNeed:0.8},
-"D2 Dopamine":{difficulty:0.6,bbbNeed:0.7},
-"5-HT2A":{difficulty:0.55,bbbNeed:0.6},
-"GABA-A":{difficulty:0.8,bbbNeed:0.7},
-"TrkB":{difficulty:0.95,bbbNeed:0.85}
-};
+// ------------------ UTIL ------------------
+function clamp(x,min,max){return Math.max(min,Math.min(max,x));}
 
-function clamp(v,min,max){return Math.max(min,Math.min(max,v));}
-
-// ---------- PRO MODEL ----------
+// ------------------ PRO SIMULATION ------------------
 function runPrediction(){
 
 const v=sliderVals;
-const receptor=document.getElementById("receptor").value;
-const mod=document.getElementById("mod").value;
-const phys=receptorPhysics[receptor];
+const rec=document.getElementById('receptor').value;
+const mod=document.getElementById('modification').value;
+
+// receptor physics
+const R={
+"mGluR5":{d:.7,b:.6},"mGlu2":{d:.5,b:.5},
+"D2 Dopamine":{d:.6,b:.7},"5-HT2A Serotonin":{d:.55,b:.6},
+"NMDA":{d:.9,b:.8},"GABA-A":{d:.8,b:.7},
+"TrkB":{d:.95,b:.85},"mGluR3":{d:.65,b:.6}
+}[rec];
 
 // stability
-let stability=clamp(60+(v.tm-60)*1.5-Math.abs(v.hydro)*6,5,98);
+let stability=clamp(60+(v.tm-60)*1.4-Math.abs(v.hydro)*7,10,98);
 
-// binding affinity
-let kd=clamp(45-(v.cdr3*1.4)+phys.difficulty*25,0.3,95);
+// selectivity
+let selectivity=clamp(40+v.cdr3*2-R.d*10,10,98);
 
-// BBB transport
-let bbb=3+v.charge*0.7-(v.mw-15)*0.2;
-if(mod==="TfR Bispecific")bbb+=3;
-if(mod==="CPP Conjugation")bbb+=2;
-bbb-=phys.bbbNeed*2;
-bbb=clamp(bbb,0.1,9.5);
+// binding
+let kd=clamp(45-(v.cdr3*1.5)+R.d*28+Math.abs(v.hydro)*3,.3,95);
 
-// half-life
-let halfLife=6+stability*0.5;
-if(mod==="Fc Fusion")halfLife*=3;
-if(mod==="PEGylation")halfLife*=2;
-if(mod==="Albumin Binding")halfLife*=1.8;
-halfLife=clamp(halfLife,1,120);
+// BBB
+let bbb=3+v.charge*.7-(v.mw-15)*.2;
+if(mod.includes("TfR"))bbb+=3;
+if(mod.includes("CPP"))bbb+=2;
+bbb-=R.b*2;
+bbb=clamp(bbb,.1,9.5);
 
-// CNS drug likeness
+// half life
+let halfLife=6+stability*.6;
+if(mod.includes("Fc"))halfLife*=3;
+if(mod.includes("PEG"))halfLife*=2;
+if(mod.includes("Albumin"))halfLife*=1.8;
+
+// CNS score
 let cns=50;
 if(v.pi>=6.5&&v.pi<=8.5)cns+=15;
 if(v.mw<18)cns+=10;
 if(Math.abs(v.hydro)<1.2)cns+=10;
-cns=clamp(cns,5,98);
 
-// translational index
-let overall=clamp(
+// overall
+let overall=Math.round(
 0.3*stability+
-0.3*(100-kd)+
+0.25*(100-kd)+
 0.2*(bbb*10)+
-0.2*cns
-,5,99);
+0.15*cns+
+0.1*selectivity);
 
 // grade
 let grade="D";
@@ -163,28 +167,27 @@ else if(overall>65)grade="B+";
 else if(overall>55)grade="B";
 else if(overall>40)grade="C";
 
-// ---------- OUTPUT ----------
+document.getElementById("placeholder").style.display="none";
+document.getElementById("output").style.display="block";
+
 document.getElementById("output").innerHTML=`
-
-<h2>Prediction Result</h2>
-
+<div class="fade-up">
+<h2>Grade: ${grade}</h2>
 <div class="metric-grid">
 <div class="metric-box"><b>KD</b><br>${kd.toFixed(2)} nM</div>
 <div class="metric-box"><b>BBB</b><br>${(bbb*10).toFixed(1)}%</div>
 <div class="metric-box"><b>Half-life</b><br>${Math.round(halfLife)} h</div>
 </div>
-
-<p><b>Structural Stability:</b> ${Math.round(stability)}</p>
+<p><b>Stability:</b> ${Math.round(stability)}</p>
 <div class="gauge-track"><div class="gauge-fill" style="width:${stability}%;background:#059669"></div></div>
-
-<p><b>CNS Drug-Likeness:</b> ${Math.round(cns)}</p>
-<div class="gauge-track"><div class="gauge-fill" style="width:${cns}%;background:#0057b8"></div></div>
-
-<h2>Clinical Grade: ${grade}</h2>
-<p>Translational Score: ${Math.round(overall)}</p>
-`;
+<p><b>Selectivity:</b> ${Math.round(selectivity)}</p>
+<div class="gauge-track"><div class="gauge-fill" style="width:${selectivity}%;background:#0057b8"></div></div>
+<p><b>CNS Drug-likeness:</b> ${Math.round(cns)}</p>
+<div class="gauge-track"><div class="gauge-fill" style="width:${cns}%;background:#d97706"></div></div>
+<p><b>Translational Score:</b> ${Math.round(overall)}</p>
+</div>`;
 }
-</script>
 
+</script>
 </body>
 </html>
